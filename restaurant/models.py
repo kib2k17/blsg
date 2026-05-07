@@ -56,8 +56,8 @@ class SiteSettings(models.Model):
     facebook_url = models.URLField(
         "Facebook page URL",
         max_length=500,
-        default="https://www.facebook.com/",
-        help_text="Paste your official Facebook page URL in Admin (search “Butuan Lechon & Seafoods Grill” on Facebook if needed).",
+        default="https://www.facebook.com/SMCityMallMainBranch",
+        help_text="Official Facebook page for the restaurant.",
     )
     maps_query = models.CharField(
         "Google Maps place query",
