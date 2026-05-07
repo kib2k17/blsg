@@ -10,22 +10,69 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+def env_bool(name, default=False):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def env_list(name, default=None):
+    value = os.environ.get(name)
+    if not value:
+        return list(default or [])
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-4akth%abe(-vx=ct^5u^x!*qqwz9tqyjfmm)@233mfuog@(tqb'
+SECRET_KEY = os.environ.get(
+    "DJANGO_SECRET_KEY",
+    "django-insecure-4akth%abe(-vx=ct^5u^x!*qqwz9tqyjfmm)@233mfuog@(tqb",
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env_bool("DJANGO_DEBUG", default=not env_bool("VERCEL"))
 
-ALLOWED_HOSTS = ["*"]  # Tighten in production: yourdomain.com, www.…
+ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS")
+if DEBUG:
+    ALLOWED_HOSTS += ["localhost", "127.0.0.1", "[::1]"]
+if env_bool("VERCEL"):
+    ALLOWED_HOSTS.append(".vercel.app")
+for vercel_host in (
+    os.environ.get("VERCEL_URL"),
+    os.environ.get("VERCEL_BRANCH_URL"),
+    os.environ.get("VERCEL_PROJECT_PRODUCTION_URL"),
+):
+    if vercel_host:
+        ALLOWED_HOSTS.append(vercel_host)
+ALLOWED_HOSTS = sorted(set(ALLOWED_HOSTS or ["localhost", "127.0.0.1"]))
+
+CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
+if env_bool("VERCEL"):
+    CSRF_TRUSTED_ORIGINS.append("https://*.vercel.app")
+for vercel_host in (
+    os.environ.get("VERCEL_URL"),
+    os.environ.get("VERCEL_BRANCH_URL"),
+    os.environ.get("VERCEL_PROJECT_PRODUCTION_URL"),
+):
+    if vercel_host:
+        CSRF_TRUSTED_ORIGINS.append(f"https://{vercel_host}")
+CSRF_TRUSTED_ORIGINS = sorted(set(CSRF_TRUSTED_ORIGINS))
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SECURE_SSL_REDIRECT = env_bool("DJANGO_SECURE_SSL_REDIRECT", default=not DEBUG)
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
 
 # Application definition
 
@@ -76,11 +123,22 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
 }
+
+DATABASE_URL = os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL")
+if DATABASE_URL:
+    import dj_database_url
+
+    DATABASES["default"] = dj_database_url.parse(
+        DATABASE_URL,
+        conn_max_age=600,
+        conn_health_checks=True,
+        ssl_require=not DEBUG,
+    )
 
 
 # Password validation
@@ -117,7 +175,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STORAGES = {

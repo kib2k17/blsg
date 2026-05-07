@@ -13,6 +13,7 @@ staticfiles/
 media/
 .env
 .env.*
+!.env.example
 
 # Node / Tailwind (optional local toolchain)
 node_modules/

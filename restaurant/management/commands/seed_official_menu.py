@@ -2,7 +2,7 @@ from decimal import Decimal
 
 from django.core.management.base import BaseCommand
 
-from restaurant.models import MenuItem
+from restaurant.models import MenuItem, SiteSettings
 
 # (category, name, price) — from BL&SG print menu (Lapu-lapu "Steamed w/ soy sauce" corrected 5550 → 555)
 MENU_DATA = [
@@ -130,6 +130,8 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        SiteSettings.load()
+
         if options["clear"]:
             n = MenuItem.objects.all().count()
             MenuItem.objects.all().delete()

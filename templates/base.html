@@ -57,7 +57,7 @@
   {% if messages %}
   <div class="fixed inset-x-0 top-[3.75rem] z-40 mx-auto max-w-lg px-4 pt-2 sm:top-16" role="status">
     {% for message in messages %}
-    <p class="mb-2 rounded-lg border border-emerald-500/30 bg-emerald-950/90 px-4 py-3 text-sm text-emerald-100 shadow-lg backdrop-blur">{{ message }}</p>
+    <p class="mb-2 rounded-lg border px-4 py-3 text-sm shadow-lg backdrop-blur {% if message.tags == 'error' %}border-red-500/30 bg-red-950/90 text-red-100{% else %}border-emerald-500/30 bg-emerald-950/90 text-emerald-100{% endif %}">{{ message }}</p>
     {% endfor %}
   </div>
   {% endif %}

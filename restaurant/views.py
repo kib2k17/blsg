@@ -1,6 +1,7 @@
 from collections import OrderedDict
 
 from django.contrib import messages
+from django.db import DatabaseError
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET
 
@@ -83,11 +84,18 @@ def contact(request):
     if request.method == "POST":
         form = ContactForm(request.POST)
         if form.is_valid():
-            form.save()
-            messages.success(
-                request,
-                "Message sent! We will contact you soon.",
-            )
+            try:
+                form.save()
+            except DatabaseError:
+                messages.error(
+                    request,
+                    "We could not save your message here. Please call us or message us on Facebook.",
+                )
+            else:
+                messages.success(
+                    request,
+                    "Message sent! We will contact you soon.",
+                )
             return redirect("contact")
     else:
         form = ContactForm()
